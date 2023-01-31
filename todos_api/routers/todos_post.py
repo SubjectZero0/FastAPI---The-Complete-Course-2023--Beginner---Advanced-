@@ -50,3 +50,20 @@ async def patch_specific_todo(todo_final: PostTodo,
     db.commit()
 
     return {'status': status.HTTP_200_OK, 'transaction': 'successful'}
+
+
+@router.delete('/{todo_id}')
+async def delete_specific_todo(todo_id: int = Todos,
+                               db: Session = Depends(get_db)) -> dict:
+
+    """Endpoint to delete a specific Todo"""
+
+    todo_origin = db.query(Todos).filter(todo_id == Todos.id).first()
+
+    if todo_origin is None:
+        raise http_exception_404()
+
+    db.delete(todo_origin)
+    db.commit()
+
+    return {'status': status.HTTP_204_NO_CONTENT, 'transaction': 'successful deletion'}
