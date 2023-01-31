@@ -17,6 +17,7 @@ class Todos(Base):
 
 
 class PostTodo(BaseModel):
+    """Model for POST todo"""
     title: str
     description: Optional[str]
     priority: int = Field(gt=0, lt=6)

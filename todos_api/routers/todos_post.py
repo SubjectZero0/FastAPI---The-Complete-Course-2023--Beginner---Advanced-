@@ -4,10 +4,11 @@ from database.get_db import get_db
 from sqlalchemy.orm import Session
 
 from models import Todos, PostTodo
+from .todos_get import http_exception_404
 
 router = APIRouter(
     prefix='/todos',
-    tags=['todos_post'],
+    tags=['todos'],
 
 )
 
@@ -26,3 +27,26 @@ async def create_a_new_todo(todo: PostTodo, db: Session = (Depends(get_db))) -> 
     db.commit()
 
     return {'status': status.HTTP_201_CREATED, 'transaction': 'successful'}
+
+
+@router.put('/{todo_id}')
+async def patch_specific_todo(todo_final: PostTodo,
+                              todo_id: int = Todos,
+                              db: Session = Depends(get_db)) -> dict:
+
+    """Endpoint To patch a specific todo"""
+
+    todo_origin = db.query(Todos).filter(todo_id == Todos.id).first()
+
+    if todo_origin is None:
+        raise http_exception_404()
+
+    todo_origin.title = todo_final.title
+    todo_origin.description = todo_final.description
+    todo_origin.priority = todo_final.priority
+    todo_origin.complete = todo_final.complete
+
+    db.add(todo_origin)
+    db.commit()
+
+    return {'status': status.HTTP_200_OK, 'transaction': 'successful'}
