@@ -1,9 +1,12 @@
 from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import Relationship
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, EmailStr
 
 from typing import Optional
 from database.db import Base
+
+# ----------------------------------------------------------------
 
 
 class Todos(Base):
@@ -26,11 +29,17 @@ class PostTodo(BaseModel):
     description: Optional[str]
     priority: int = Field(gt=0, lt=6)
     complete: bool
+    owner_id: int
 
 # --------------------------------------------------------------
 
 
 class Users(Base):
+    """
+    Model/Table for Users.
+    One to Many relationship with Todos.
+
+    """
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
@@ -46,4 +55,11 @@ class Users(Base):
 
 
 class CreateUser(BaseModel):
+    """
+    Pydantic Model for creating a user.
+    """
     username: str
+    password: str
+    email: EmailStr
+    first_name: Optional[str]
+    last_name: Optional[str]
