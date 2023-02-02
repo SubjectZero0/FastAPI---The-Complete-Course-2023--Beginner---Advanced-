@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
 from models import Users, CreateUser
-from .todos_get import http_exception_404
 
 from database.get_db import get_db
 from sqlalchemy.orm import Session
