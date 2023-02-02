@@ -6,7 +6,7 @@ from database.get_db import get_db
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import JWTError, jwt
 # -----------------------------------------------------------------------
 
 # Authentication and OAUTH2 authorization
@@ -71,6 +71,23 @@ def create_access_token(username: str,
     encode.update({'exp': expires})
 
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str = Depends(oauth2_bearer)):
+    """
+    Decodes and returns the user assigned to Token
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+        username: str = payload.get('sub')
+        user_id: int = payload.get('id')
+        if username is None or user_id is None:
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                 detail='User not found.')
+        return {'username': username, 'id': user_id}
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail='User not found.')
 
 # -----------------------------------------------------------------------
 
