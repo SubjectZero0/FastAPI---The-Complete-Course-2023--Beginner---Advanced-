@@ -23,8 +23,12 @@ def http_exception_404():
     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Item not Found')
 
 
+def http_exception_401():
+    return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Not Authorized')
+
 # ---------------------------------------------------------------------------
 #  Define routes for GET requests
+
 
 @router.get("/")
 async def get_all_todos(db: Session = Depends(get_db)):
@@ -35,15 +39,14 @@ async def get_all_todos(db: Session = Depends(get_db)):
 @router.get('/{todo_id}')
 async def get_specific_todo(todo_id: int,
                             db: Session = Depends(get_db),
-                            user=Depends(decode_token)):
+                            user: dict = Depends(decode_token)):
     """
     Get a todo item by specifying the ID
     Users must be authenticated,
     and can only retrieve their own todos
     """
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
+        raise http_exception_401()
 
     queryset = db.query(Todos)\
         .filter(Todos.owner_id == user.get('id'))\

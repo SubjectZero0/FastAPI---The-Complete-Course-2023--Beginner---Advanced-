@@ -4,7 +4,7 @@ from database.get_db import get_db
 from sqlalchemy.orm import Session
 
 from models import Todos, PostTodo
-from .todos_get import http_exception_404
+from .todos_get import http_exception_404, http_exception_401
 from auth.routers.auth import decode_token
 
 router = APIRouter(
@@ -17,15 +17,14 @@ router = APIRouter(
 @router.post("/")
 async def create_a_new_todo(todo: PostTodo,
                             db: Session = (Depends(get_db)),
-                            user=Depends(decode_token)) -> dict:
+                            user: dict = Depends(decode_token)) -> dict:
     """
     Endpoint for creating a Todo.
     User has to be authorized to make a Todo.
     """
 
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail='Not Authorized')
+        raise http_exception_401()
 
     todo_model = Todos()
 
@@ -45,7 +44,7 @@ async def create_a_new_todo(todo: PostTodo,
 async def patch_specific_todo(todo_final: PostTodo,
                               todo_id: int = Todos,
                               db: Session = Depends(get_db),
-                              user=Depends(decode_token)) -> dict:
+                              user: dict = Depends(decode_token)) -> dict:
 
     """
     Endpoint To patch a specific todo
@@ -54,8 +53,7 @@ async def patch_specific_todo(todo_final: PostTodo,
     """
 
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail='Not Authorized')
+        raise http_exception_401()
 
     todo_origin = db.query(Todos)\
         .filter(Todos.owner_id == user.get('id'))\
@@ -78,13 +76,12 @@ async def patch_specific_todo(todo_final: PostTodo,
 @router.delete('/{todo_id}')
 async def delete_specific_todo(todo_id: int = Todos,
                                db: Session = Depends(get_db),
-                               user=Depends(decode_token)) -> dict:
+                               user: dict = Depends(decode_token)) -> dict:
 
     """Endpoint to delete a specific Todo"""
 
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail='Not Authorized')
+        raise http_exception_401()
 
     todo_origin = db.query(Todos)\
         .filter(Todos.owner_id == user.get('id'))\
