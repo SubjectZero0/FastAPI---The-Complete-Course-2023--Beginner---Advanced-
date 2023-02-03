@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 
 from database.get_db import get_db
 from sqlalchemy.orm import Session
 
 from models import Todos, PostTodo
 from .todos_get import http_exception_404
+from auth.routers.auth import decode_token
 
 router = APIRouter(
     prefix='/todos',
@@ -14,10 +15,21 @@ router = APIRouter(
 
 
 @router.post("/")
-async def create_a_new_todo(todo: PostTodo, db: Session = (Depends(get_db))) -> dict:
+async def create_a_new_todo(todo: PostTodo,
+                            db: Session = (Depends(get_db)),
+                            user=Depends(decode_token)) -> dict:
+    """
+    Endpoint for creating a Todo.
+    User has to be authorized to make a Todo.
+    """
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Not Authorized')
 
     todo_model = Todos()
 
+    todo_model.owner_id = user.get('id')
     todo_model.title = todo.title
     todo_model.description = todo.description
     todo_model.priority = todo.priority
@@ -32,11 +44,22 @@ async def create_a_new_todo(todo: PostTodo, db: Session = (Depends(get_db))) -> 
 @router.put('/{todo_id}')
 async def patch_specific_todo(todo_final: PostTodo,
                               todo_id: int = Todos,
-                              db: Session = Depends(get_db)) -> dict:
+                              db: Session = Depends(get_db),
+                              user=Depends(decode_token)) -> dict:
 
-    """Endpoint To patch a specific todo"""
+    """
+    Endpoint To patch a specific todo
+    User has to be authorized and can only
+    update their own todos.
+    """
 
-    todo_origin = db.query(Todos).filter(todo_id == Todos.id).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Not Authorized')
+
+    todo_origin = db.query(Todos)\
+        .filter(Todos.owner_id == user.get('id'))\
+        .filter(todo_id == Todos.id).first()
 
     if todo_origin is None:
         raise http_exception_404()
@@ -54,11 +77,18 @@ async def patch_specific_todo(todo_final: PostTodo,
 
 @router.delete('/{todo_id}')
 async def delete_specific_todo(todo_id: int = Todos,
-                               db: Session = Depends(get_db)) -> dict:
+                               db: Session = Depends(get_db),
+                               user=Depends(decode_token)) -> dict:
 
     """Endpoint to delete a specific Todo"""
 
-    todo_origin = db.query(Todos).filter(todo_id == Todos.id).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Not Authorized')
+
+    todo_origin = db.query(Todos)\
+        .filter(Todos.owner_id == user.get('id'))\
+        .filter(todo_id == Todos.id).first()
 
     if todo_origin is None:
         raise http_exception_404()
