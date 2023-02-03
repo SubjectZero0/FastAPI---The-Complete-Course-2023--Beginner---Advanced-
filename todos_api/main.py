@@ -10,5 +10,6 @@ models.Base.metadata.create_all(bind=engine)
 
 app.include_router(todos_get.router)
 app.include_router(todos_post.router)
+
 app.include_router(create_user.router)
 app.include_router(auth.router)

@@ -4,6 +4,7 @@ from database.get_db import get_db
 from sqlalchemy.orm import Session
 
 from models import Todos
+from auth.routers.auth import decode_token
 
 # --------------------------------------------------------------------------
 #  Set up Router
@@ -32,10 +33,21 @@ async def get_all_todos(db: Session = Depends(get_db)):
 
 
 @router.get('/{todo_id}')
-async def get_specific_todo(todo_id: int, db: Session = Depends(get_db)):
-    """Get a todo item by specifying the ID"""
+async def get_specific_todo(todo_id: int,
+                            db: Session = Depends(get_db),
+                            user=Depends(decode_token)):
+    """
+    Get a todo item by specifying the ID
+    Users must be authenticated,
+    and can only retrieve their own todos
+    """
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
 
-    queryset = db.query(Todos).filter(Todos.id == todo_id).first()
+    queryset = db.query(Todos)\
+        .filter(Todos.owner_id == user.get('id'))\
+        .filter(Todos.id == todo_id).first()
 
     if queryset is None:
         raise http_exception_404()
