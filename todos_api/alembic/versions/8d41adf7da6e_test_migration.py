@@ -17,8 +17,10 @@ depends_on = None
 
 
 def upgrade() -> None:
+    """Test migration"""
     pass
 
 
 def downgrade() -> None:
+    """Test migration"""
     pass
