@@ -1,2 +1,3 @@
-FastAPI course projects
+FastAPI course projects.
+
 For self education purposes
